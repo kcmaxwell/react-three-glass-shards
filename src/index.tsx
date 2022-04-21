@@ -2,12 +2,27 @@ import "./styles.css";
 import * as THREE from "three";
 import { Canvas, useFrame, MeshProps } from "@react-three/fiber";
 import { Suspense, useRef, useState } from "react";
-import { Environment, OrbitControls } from "@react-three/drei";
+import {
+  Environment,
+  OrbitControls,
+  Instances,
+  Instance
+} from "@react-three/drei";
 import FPSStats from "react-fps-stats";
 import ReactDOM from "react-dom";
 
+const randomPosition = (r: number) =>
+  new THREE.Vector3(
+    r / 2 - Math.random() * r,
+    r / 2 - Math.random() * r,
+    r / 2 - Math.random() * r
+  );
+const positionData = Array.from({ length: 10 }, (r: number = 10) => ({
+  position: randomPosition(r)
+}));
+
 const Box = (props: MeshProps) => {
-  const mesh = useRef<THREE.mesh>();
+  const mesh = useRef<THREE.Mesh>();
 
   useFrame((state, delta) => {
     mesh.current.rotation.x += 1 * delta;
@@ -15,10 +30,21 @@ const Box = (props: MeshProps) => {
   });
 
   return (
-    <mesh {...props} ref={mesh} scale={[1, 1, 1]}>
-      <boxBufferGeometry attach="geometry" args={[1, 1, 1]} />
+    <group {...props}>
+      <Instance ref={mesh} />
+    </group>
+  );
+};
+
+const Boxes = () => {
+  return (
+    <Instances limit={10}>
+      <boxBufferGeometry />
       <meshPhysicalMaterial metalness={1} roughness={0} />
-    </mesh>
+      {positionData.map((props, i) => (
+        <Box key={i} {...props} />
+      ))}
+    </Instances>
   );
 };
 
@@ -27,7 +53,7 @@ ReactDOM.render(
     <FPSStats />
     <Canvas>
       <Suspense fallback={"Loading..."}>
-        <Box />
+        <Boxes />
         <pointLight position={[10, 10, 10]} />
         <ambientLight />
         <Environment
